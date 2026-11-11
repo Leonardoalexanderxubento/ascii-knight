@@ -1,0 +1,8 @@
+.DS_Store
+Thumbs.db
+.vscode/
+
+# músicas locais (não subir arquivos com direitos autorais)
+audio/*.mp3
+audio/*.ogg
+audio/*.wav
