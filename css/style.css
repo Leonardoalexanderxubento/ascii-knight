@@ -10,3 +10,21 @@ html, body {
 #tela {
   display: block;
 }
+
+#som {
+  position: fixed;
+  right: 16px;
+  bottom: 14px;
+  padding: 6px 10px;
+  font: bold 12px "Courier New", monospace;
+  color: #b8b0a4;
+  background: rgba(10, 8, 8, 0.7);
+  border: 1px solid #3a1418;
+  cursor: pointer;
+  letter-spacing: 1px;
+}
+
+#som:hover {
+  color: #ff3344;
+  border-color: #ff3344;
+}
