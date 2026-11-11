@@ -4,6 +4,7 @@ const camadas = [
   window.Knight,
   window.Scarf,
   window.Grass.front,
+  window.Particles,
 ];
 
 camadas.filter(Boolean).forEach(c => Engine.add(c));
