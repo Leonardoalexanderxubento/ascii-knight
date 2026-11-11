@@ -55,6 +55,20 @@ const Engine = (() => {
     requestAnimationFrame(frame);
   }
 
+  // número pseudoaleatório fixo para cada célula (0..1)
+  function hash(x, y) {
+    const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
+    return s - Math.floor(s);
+  }
+
+  // guarda o caractere no grupo da sua cor (cores reduzidas a 16 tons por canal)
+  function addChar(grupos, px, py, c, r, g, b) {
+    const key = (Math.min(255, r) >> 4 << 8) | (Math.min(255, g) >> 4 << 4) | (Math.min(255, b) >> 4);
+    let lista = grupos.get(key);
+    if (!lista) grupos.set(key, (lista = []));
+    lista.push(px, py, c);
+  }
+
   function render(t) {
     const data = cctx.getImageData(0, 0, cols, rows).data;
 
@@ -66,29 +80,43 @@ const Engine = (() => {
     // agrupa caracteres pela cor para desenhar mais rápido
     const grupos = new Map();
 
+    // glitch: de vez em quando uma faixa de linhas "escorrega" para o lado
+    const glitchAtivo = Math.sin(t * 0.7) > 0.97 || Math.random() < 0.004;
+    const glitchY = Math.floor(Math.random() * rows);
+    const glitchH = 2 + Math.floor(Math.random() * 6);
+    const glitchDx = (Math.random() < 0.5 ? -1 : 1) * (1 + Math.floor(Math.random() * 4));
+
     for (let y = 0; y < rows; y++) {
+      const dx = glitchAtivo && y >= glitchY && y < glitchY + glitchH ? glitchDx : 0;
       for (let x = 0; x < cols; x++) {
         const i = (y * cols + x) * 4;
         const a = data[i + 3] / 255;
         let r = data[i] * a, g = data[i + 1] * a, b = data[i + 2] * a;
         let v = Math.max(r, g, b) / 255; // brilho 0..1
 
-        if (v < 0.05) continue;
+        // vinheta: escurece as bordas da tela
+        const nx = x / cols - 0.5, ny = y / rows - 0.5;
+        const vin = 1 - Math.min(0.55, (nx * nx + ny * ny) * 1.1);
+        v *= vin; r *= vin; g *= vin; b *= vin;
+
+        if (v < 0.05) {
+          // céu: estrelinhas que piscam
+          const h = hash(x, y);
+          if (h < 0.004 && y < rows * 0.75) {
+            const pisca = 0.5 + 0.5 * Math.sin(t * 2 + h * 5000);
+            if (pisca > 0.3) addChar(grupos, x * cw, y * ch, h < 0.001 ? '*' : '.', 90 * pisca, 90 * pisca, 100 * pisca);
+          }
+          continue;
+        }
 
         let k = Math.min(RAMP.length - 1, Math.floor(v * RAMP.length));
+        // cintilação: alguns caracteres trocam aleatoriamente
+        if (Math.random() < 0.04) k = Math.max(1, Math.min(RAMP.length - 1, k + (Math.random() < 0.5 ? -1 : 1)));
         const c = RAMP[k];
         if (c === ' ') continue;
 
-        // clareia um pouco e reduz a quantidade de cores
-        const boost = 1.25;
-        r = Math.min(255, r * boost) >> 4;
-        g = Math.min(255, g * boost) >> 4;
-        b = Math.min(255, b * boost) >> 4;
-        const key = (r << 8) | (g << 4) | b;
-
-        let lista = grupos.get(key);
-        if (!lista) grupos.set(key, (lista = []));
-        lista.push(x * cw, y * ch, c);
+        // clareia um pouco
+        addChar(grupos, (x + dx) * cw, y * ch, c, r * 1.25, g * 1.25, b * 1.25);
       }
     }
 
