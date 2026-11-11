@@ -2,6 +2,7 @@
 const camadas = [
   window.Grass.back,
   window.Knight,
+  window.Scarf,
   window.Grass.front,
 ];
 
